@@ -42,11 +42,23 @@ const IngredientInput = ({ onAnalyze, isLoading }) => {
     }
   };
 
-  const exampleIngredients =
-    "Water, High Fructose Corn Syrup, Citric Acid, Natural Flavors, Sodium Citrate, Sodium Chloride, Monopotassium Phosphate, Modified Food Starch, Red 40, Glycerol Ester of Rosin";
+  const examples = [
+    {
+      label: "Sports drink",
+      text: "Water, High Fructose Corn Syrup, Citric Acid, Natural Flavors, Sodium Citrate, Sodium Chloride, Monopotassium Phosphate, Modified Food Starch, Red 40, Glycerol Ester of Rosin",
+    },
+    {
+      label: "Granola bar",
+      text: "Whole grain oats, Brown rice syrup, Roasted almonds, Honey, Cane sugar, Sunflower oil, Rice flour, Sea salt, Natural flavor, Tocopherols (vitamin E) to maintain freshness",
+    },
+    {
+      label: "Frozen meal",
+      text: "Cooked pasta (water, semolina), Tomato puree, Grilled chicken (chicken breast, water, salt), Cream, Parmesan cheese, Mushrooms, Onion, Garlic, Modified corn starch, Salt, Sugar, Spices, Yeast extract, Natural flavors",
+    },
+  ];
 
-  const handleUseExample = () => {
-    setText(exampleIngredients);
+  const handleUseExample = (text) => {
+    setText(text);
     setError("");
   };
 
@@ -156,14 +168,19 @@ const IngredientInput = ({ onAnalyze, isLoading }) => {
             </span>
 
             {charCount === 0 && (
-              <button
-                type="button"
-                onClick={handleUseExample}
-                className="btn-link"
-                style={{ fontSize: "0.8125rem" }}
-              >
-                Try an example
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {examples.map((ex) => (
+                  <button
+                    key={ex.label}
+                    type="button"
+                    onClick={() => handleUseExample(ex.text)}
+                    className="btn-link"
+                    style={{ fontSize: "0.8125rem", padding: 0 }}
+                  >
+                    Use {ex.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

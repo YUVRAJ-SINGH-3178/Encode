@@ -6,14 +6,17 @@ const MAX_HISTORY_ITEMS = 50;
 // Local fallback storage key
 const LOCAL_HISTORY_KEY = "encode_local_history_v1";
 
-function readLocalHistory() {
+function readLocalHistory(userId) {
   if (typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.slice(0, MAX_HISTORY_ITEMS);
-    return [];
+    if (!Array.isArray(parsed)) return [];
+    const filtered = userId
+      ? parsed.filter((item) => item?.user_id === userId)
+      : parsed;
+    return filtered.slice(0, MAX_HISTORY_ITEMS);
   } catch (err) {
     console.error("Local history read error:", err);
     return [];
@@ -34,7 +37,7 @@ function writeLocalHistory(items) {
 
 export function saveLocalAnalysis(entry) {
   if (!entry) return;
-  const existing = readLocalHistory();
+  const existing = readLocalHistory(entry.user_id);
   const withId = {
     id: entry.id || crypto.randomUUID?.() || `${Date.now()}`,
     created_at: entry.created_at || new Date().toISOString(),
@@ -55,19 +58,19 @@ function mergeHistory(remote = [], local = []) {
       byId.set(item.id, item); // prefer remote over local for same id
     }
   }
-  return Array.from(byId.values()).sort((a, b) => {
-    const aTime = new Date(a.created_at || 0).getTime();
-    const bTime = new Date(b.created_at || 0).getTime();
-    return bTime - aTime;
-  }).slice(0, MAX_HISTORY_ITEMS);
+  return Array.from(byId.values())
+    .sort((a, b) => {
+      const aTime = new Date(a.created_at || 0).getTime();
+      const bTime = new Date(b.created_at || 0).getTime();
+      return bTime - aTime;
+    })
+    .slice(0, MAX_HISTORY_ITEMS);
 }
 
 /**
  * Get the user's analysis history with pagination support
  */
 export async function getHistory(limit = MAX_HISTORY_ITEMS) {
-  const local = readLocalHistory();
-
   try {
     const {
       data: { user },
@@ -76,10 +79,12 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
 
     if (userError || !user) {
       return {
-        data: local,
+        data: [],
         error: "Session expired. Please sign in again.",
       };
     }
+
+    const local = readLocalHistory(user.id);
 
     const { data, error } = await supabase
       .from("analyses")
@@ -97,7 +102,11 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
         return { data: local, error: "Session expired. Please sign in again." };
       }
       if (error.code === "42P01") {
-        return { data: local, error: "Using local history (missing table)." };
+        return {
+          data: local,
+          error:
+            "Backend not provisioned: analyses table missing. Run supabase db push.",
+        };
       }
 
       return { data: local, error: error.message };
@@ -108,6 +117,10 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
     return { data: merged, error: null };
   } catch (err) {
     console.error("Unexpected history error:", err);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const local = readLocalHistory(user?.id);
     return { data: local, error: "Using local history (offline)." };
   }
 }
@@ -139,7 +152,7 @@ export async function deleteAnalysis(id) {
       throw err;
     }
     console.error("Unexpected delete error:", err);
-    // Try local fallback
+    // Try local fallback (best effort, regardless of user)
     const local = readLocalHistory();
     const next = local.filter((item) => item.id !== id);
     writeLocalHistory(next);
@@ -221,16 +234,26 @@ export async function clearHistory() {
  */
 export async function getHistoryCount() {
   try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return readLocalHistory().length;
+    }
+
     const { count, error } = await supabase
       .from("analyses")
-      .select("*", { count: "exact", head: true });
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Error getting history count:", error);
-      return 0;
+      return readLocalHistory(user.id).length;
     }
 
-    return count || 0;
+    return count || readLocalHistory(user.id).length;
   } catch (err) {
     console.error("Unexpected count error:", err);
     return readLocalHistory().length;
