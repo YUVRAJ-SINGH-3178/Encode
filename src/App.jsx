@@ -114,17 +114,24 @@ function AppContent() {
 
     try {
       const result = await historyService.getHistory();
+      const hasData = Array.isArray(result.data) && result.data.length > 0;
+
       if (result.error) {
-        console.error("History error:", result.error);
-        setHistory([]);
-        setLastAnalysisAt(null);
-      } else {
-        setHistory(result.data);
-        if (result.data && result.data.length > 0) {
-          setLastAnalysisAt(result.data[0].created_at || null);
-        } else {
+        console.warn("History warning:", result.error);
+        if (!hasData) {
+          setHistory([]);
           setLastAnalysisAt(null);
+          return;
         }
+        // If we have fallback/local data, use it and warn the user once
+        toast.warning(result.error);
+      }
+
+      setHistory(result.data || []);
+      if (hasData) {
+        setLastAnalysisAt(result.data[0].created_at || null);
+      } else {
+        setLastAnalysisAt(null);
       }
     } catch (err) {
       console.error("Load history error:", err);

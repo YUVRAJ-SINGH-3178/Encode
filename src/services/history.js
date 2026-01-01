@@ -43,38 +43,71 @@ export function saveLocalAnalysis(entry) {
   writeLocalHistory([withId, ...existing]);
 }
 
+function mergeHistory(remote = [], local = []) {
+  const byId = new Map();
+  for (const item of local) {
+    if (item && item.id) {
+      byId.set(item.id, item);
+    }
+  }
+  for (const item of remote) {
+    if (item && item.id) {
+      byId.set(item.id, item); // prefer remote over local for same id
+    }
+  }
+  return Array.from(byId.values()).sort((a, b) => {
+    const aTime = new Date(a.created_at || 0).getTime();
+    const bTime = new Date(b.created_at || 0).getTime();
+    return bTime - aTime;
+  }).slice(0, MAX_HISTORY_ITEMS);
+}
+
 /**
  * Get the user's analysis history with pagination support
  */
 export async function getHistory(limit = MAX_HISTORY_ITEMS) {
+  const local = readLocalHistory();
+
   try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return {
+        data: local,
+        error: "Session expired. Please sign in again.",
+      };
+    }
+
     const { data, error } = await supabase
       .from("analyses")
       .select(
         "id, input_text, judgment, key_factors, tradeoffs, uncertainty, confidence, created_at"
       )
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
       console.error("Error fetching history:", error);
 
-      // Handle specific errors
       if (error.code === "PGRST301" || error.message?.includes("JWT")) {
-        return { data: [], error: "Session expired. Please sign in again." };
+        return { data: local, error: "Session expired. Please sign in again." };
       }
       if (error.code === "42P01") {
-        const local = readLocalHistory();
         return { data: local, error: "Using local history (missing table)." };
       }
 
-      return { data: [], error: error.message };
+      return { data: local, error: error.message };
     }
 
-    return { data: data || [], error: null };
+    const merged = mergeHistory(data || [], local).slice(0, limit);
+    writeLocalHistory(merged);
+    return { data: merged, error: null };
   } catch (err) {
     console.error("Unexpected history error:", err);
-    const local = readLocalHistory();
     return { data: local, error: "Using local history (offline)." };
   }
 }

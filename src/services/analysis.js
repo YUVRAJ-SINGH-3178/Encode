@@ -132,7 +132,11 @@ export async function analyzeIngredients(ingredients) {
     }
 
     // Persist a local copy for offline history as well
-    saveLocalAnalysis({ ...data, input_text: validation.text });
+    saveLocalAnalysis({
+      ...data,
+      input_text: validation.text,
+      user_id: session.user.id,
+    });
 
     return data;
   } catch (err) {
@@ -155,7 +159,11 @@ export async function analyzeIngredients(ingredients) {
     if (isNetworkish) {
       console.warn("Falling back to local analysis (service unreachable)");
       const fallback = buildFallbackAnalysis(validation.text);
-      saveLocalAnalysis({ ...fallback, input_text: validation.text });
+      saveLocalAnalysis({
+        ...fallback,
+        input_text: validation.text,
+        user_id: session.user.id,
+      });
       return fallback;
     }
 
