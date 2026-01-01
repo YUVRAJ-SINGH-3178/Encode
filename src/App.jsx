@@ -41,6 +41,7 @@ function AppContent() {
   const toast = useToast();
   const supabaseConfigured = isConfigured();
   const latestEntry = history?.[0];
+  const hasWarnedMissingTable = React.useRef(false);
 
   const formatDateTime = (value) => {
     if (!value) return "Not yet";
@@ -118,13 +119,22 @@ function AppContent() {
 
       if (result.error) {
         console.warn("History warning:", result.error);
+        // Only warn once for missing table; skip repeated toasts
+        const isMissingTable =
+          result.error.includes("table") ||
+          result.error.includes("42P01") ||
+          result.error.includes("schema cache");
+        if (isMissingTable && !hasWarnedMissingTable.current) {
+          hasWarnedMissingTable.current = true;
+          // Silent: table not provisioned yet, use local only
+        } else if (!isMissingTable) {
+          toast.warning(result.error);
+        }
         if (!hasData) {
           setHistory([]);
           setLastAnalysisAt(null);
           return;
         }
-        // If we have fallback/local data, use it and warn the user once
-        toast.warning(result.error);
       }
 
       setHistory(result.data || []);

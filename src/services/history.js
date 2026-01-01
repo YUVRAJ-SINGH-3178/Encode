@@ -101,12 +101,13 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
       if (error.code === "PGRST301" || error.message?.includes("JWT")) {
         return { data: local, error: "Session expired. Please sign in again." };
       }
-      if (error.code === "42P01") {
-        return {
-          data: local,
-          error:
-            "Backend not provisioned: analyses table missing. Run supabase db push.",
-        };
+      // Handle missing table or schema cache errors silently
+      if (
+        error.code === "42P01" ||
+        error.message?.includes("schema cache") ||
+        error.message?.includes("Could not find")
+      ) {
+        return { data: local, error: null }; // silent fallback to local
       }
 
       return { data: local, error: error.message };
