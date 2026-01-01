@@ -47,18 +47,17 @@ export function saveLocalAnalysis(entry) {
 }
 
 function mergeHistory(remote = [], local = []) {
-  const byId = new Map();
-  for (const item of local) {
-    if (item && item.id) {
-      byId.set(item.id, item);
-    }
-  }
-  for (const item of remote) {
-    if (item && item.id) {
-      byId.set(item.id, item); // prefer remote over local for same id
-    }
-  }
-  return Array.from(byId.values())
+  // Remote is source of truth - only add local items that don't exist remotely
+  // (these are items saved while offline that haven't synced yet)
+  const remoteIds = new Set(remote.map((item) => item.id));
+  const unsynced = local.filter(
+    (item) => item && item.id && !remoteIds.has(item.id)
+  );
+
+  // Combine: remote items + unsynced local items
+  const combined = [...remote, ...unsynced];
+
+  return combined
     .sort((a, b) => {
       const aTime = new Date(a.created_at || 0).getTime();
       const bTime = new Date(b.created_at || 0).getTime();
@@ -101,13 +100,12 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
       if (error.code === "PGRST301" || error.message?.includes("JWT")) {
         return { data: local, error: "Session expired. Please sign in again." };
       }
-      // Handle missing table or schema cache errors silently
-      if (
-        error.code === "42P01" ||
-        error.message?.includes("schema cache") ||
-        error.message?.includes("Could not find")
-      ) {
-        return { data: local, error: null }; // silent fallback to local
+      if (error.code === "42P01") {
+        return {
+          data: local,
+          error:
+            "Backend not provisioned: analyses table missing. Run supabase db push.",
+        };
       }
 
       return { data: local, error: error.message };
@@ -134,12 +132,21 @@ export async function deleteAnalysis(id) {
     throw new Error("Invalid analysis ID");
   }
 
+  // Always remove from local storage first
+  const local = readLocalHistory();
+  const next = local.filter((item) => item.id !== id);
+  writeLocalHistory(next);
+
   try {
     const { error } = await supabase.from("analyses").delete().eq("id", id);
 
     if (error) {
       console.error("Error deleting analysis:", error);
 
+      // If table doesn't exist or permission issue, local delete is enough
+      if (error.code === "42P01" || error.message?.includes("schema cache")) {
+        return { success: true };
+      }
       if (error.code === "42501") {
         throw new Error("You don't have permission to delete this analysis.");
       }
@@ -153,11 +160,8 @@ export async function deleteAnalysis(id) {
       throw err;
     }
     console.error("Unexpected delete error:", err);
-    // Try local fallback (best effort, regardless of user)
-    const local = readLocalHistory();
-    const next = local.filter((item) => item.id !== id);
-    writeLocalHistory(next);
-    throw new Error("Unable to delete remote analysis; local history updated.");
+    // Local already deleted above, so just return success
+    return { success: true };
   }
 }
 
@@ -211,6 +215,11 @@ export async function clearHistory() {
     if (error) {
       console.error("Error clearing history:", error);
 
+      // If table doesn't exist, just clear local
+      if (error.code === "42P01" || error.message?.includes("schema cache")) {
+        writeLocalHistory([]);
+        return { success: true };
+      }
       if (error.code === "42501") {
         throw new Error("You don't have permission to clear history.");
       }
@@ -218,6 +227,8 @@ export async function clearHistory() {
       throw new Error(error.message || "Failed to clear history");
     }
 
+    // Also clear local storage on success
+    writeLocalHistory([]);
     return { success: true };
   } catch (err) {
     if (err.message && !err.message.includes("fetch")) {

@@ -179,8 +179,69 @@ export async function analyzeIngredients(ingredients) {
   }
 }
 
-function buildFallbackAnalysis(text) {
+// Check if input looks like a valid ingredient list
+function looksLikeIngredients(text) {
   const lower = text.toLowerCase();
+  // Common ingredient-related words
+  const ingredientSignals = [
+    "water",
+    "salt",
+    "sugar",
+    "flour",
+    "oil",
+    "acid",
+    "flavor",
+    "extract",
+    "starch",
+    "syrup",
+    "milk",
+    "cream",
+    "butter",
+    "egg",
+    "wheat",
+    "soy",
+    "corn",
+    "rice",
+    "vitamin",
+    "sodium",
+    "calcium",
+    "potassium",
+    "natural",
+    "artificial",
+    "modified",
+    "hydrolyzed",
+    "concentrate",
+    "powder",
+    "dried",
+  ];
+  const matchCount = ingredientSignals.filter((s) => lower.includes(s)).length;
+  // Also check for comma-separated structure
+  const hasCommas = (text.match(/,/g) || []).length >= 2;
+  return matchCount >= 2 || (hasCommas && matchCount >= 1);
+}
+
+function buildFallbackAnalysis(text) {
+  // Check if input is valid
+  if (!looksLikeIngredients(text)) {
+    return {
+      judgment:
+        "This does not appear to be a food ingredient list. Please paste ingredients from actual product packaging.",
+      key_factors: [
+        {
+          factor: "invalid input",
+          explanation:
+            "The provided text does not match the expected format of a food ingredient list.",
+        },
+      ],
+      tradeoffs: "Unable to analyze non-ingredient text.",
+      uncertainty: "Cannot determine if this relates to any food product.",
+      confidence: "low",
+    };
+  }
+
+  const lower = text.toLowerCase();
+  const ingredientCount = (text.match(/,/g) || []).length + 1;
+
   const sweeteners = [
     "sugar",
     "fructose",
@@ -190,6 +251,9 @@ function buildFallbackAnalysis(text) {
     "sucralose",
     "acesulfame",
     "aspartame",
+    "honey",
+    "molasses",
+    "stevia",
   ];
   const preservatives = [
     "benzoate",
@@ -197,6 +261,10 @@ function buildFallbackAnalysis(text) {
     "nitrite",
     "nitrate",
     "propionate",
+    "sulfite",
+    "bht",
+    "bha",
+    "tbhq",
   ];
   const emulsifiers = [
     "lecithin",
@@ -205,49 +273,136 @@ function buildFallbackAnalysis(text) {
     "polysorbate",
     "mono-",
     "di-",
+    "xanthan",
+    "gellan",
+    "pectin",
+  ];
+  const colors = [
+    "red 40",
+    "yellow 5",
+    "yellow 6",
+    "blue 1",
+    "caramel color",
+    "annatto",
+    "beta carotene",
+  ];
+  const naturalIndicators = [
+    "organic",
+    "natural flavor",
+    "sea salt",
+    "cane sugar",
+    "whole grain",
   ];
 
-  const hasSweetener = sweeteners.some((s) => lower.includes(s));
-  const hasPreservative = preservatives.some((s) => lower.includes(s));
-  const hasEmulsifier = emulsifiers.some((s) => lower.includes(s));
+  const sweetenerMatches = sweeteners.filter((s) => lower.includes(s));
+  const preservativeMatches = preservatives.filter((s) => lower.includes(s));
+  const emulsifierMatches = emulsifiers.filter((s) => lower.includes(s));
+  const colorMatches = colors.filter((s) => lower.includes(s));
+  const naturalMatches = naturalIndicators.filter((s) => lower.includes(s));
 
   const factors = [];
-  if (hasSweetener)
+
+  // Ingredient count analysis
+  if (ingredientCount > 15) {
     factors.push({
-      factor: "sweeteners",
-      explanation:
-        "Multiple sweetening agents suggest sweetness balancing and texture goals.",
+      factor: "complex formulation",
+      explanation: `With approximately ${ingredientCount} ingredients, this suggests a highly processed product with multiple functional additives.`,
     });
-  if (hasPreservative)
+  } else if (ingredientCount <= 5) {
     factors.push({
-      factor: "preservation",
-      explanation:
-        "Presence of preservatives points to shelf-life and stability priorities.",
-    });
-  if (hasEmulsifier)
-    factors.push({
-      factor: "emulsifiers/stabilizers",
-      explanation:
-        "Stabilizers/emulsifiers hint at texture smoothing and separation control.",
-    });
-  if (factors.length === 0) {
-    factors.push({
-      factor: "structure",
-      explanation:
-        "Label is concise; limited signals beyond basic formulation.",
+      factor: "simple formulation",
+      explanation: `Only about ${ingredientCount} ingredients indicates a relatively straightforward, less processed product.`,
     });
   }
 
-  const confidence = factors.length >= 2 ? "medium" : "low";
+  if (sweetenerMatches.length > 1) {
+    factors.push({
+      factor: "multiple sweeteners",
+      explanation: `Contains ${
+        sweetenerMatches.length
+      } sweetening agents (${sweetenerMatches
+        .slice(0, 3)
+        .join(
+          ", "
+        )}), suggesting taste optimization and possibly cost balancing.`,
+    });
+  } else if (sweetenerMatches.length === 1) {
+    factors.push({
+      factor: "sweetener presence",
+      explanation: `Contains ${sweetenerMatches[0]}, indicating sweetness is a key product attribute.`,
+    });
+  }
+
+  if (preservativeMatches.length > 0) {
+    factors.push({
+      factor: "shelf-life focus",
+      explanation: `Preservatives present (${preservativeMatches.join(
+        ", "
+      )}) point to extended shelf-life as a priority.`,
+    });
+  }
+
+  if (emulsifierMatches.length > 0) {
+    factors.push({
+      factor: "texture engineering",
+      explanation: `Emulsifiers/stabilizers (${emulsifierMatches
+        .slice(0, 2)
+        .join(
+          ", "
+        )}) suggest texture consistency and separation prevention goals.`,
+    });
+  }
+
+  if (colorMatches.length > 0) {
+    factors.push({
+      factor: "visual appeal",
+      explanation: `Color additives indicate visual appearance is prioritized for consumer appeal.`,
+    });
+  }
+
+  if (naturalMatches.length >= 2) {
+    factors.push({
+      factor: "natural positioning",
+      explanation: `Terms like ${naturalMatches
+        .slice(0, 2)
+        .join(", ")} suggest marketing toward natural/clean-label preferences.`,
+    });
+  }
+
+  // Ensure at least one factor
+  if (factors.length === 0) {
+    factors.push({
+      factor: "standard formulation",
+      explanation:
+        "No strong distinguishing patterns detected; appears to be a conventional product formulation.",
+    });
+  }
+
+  // Limit to 4 factors
+  const topFactors = factors.slice(0, 4);
+
+  const confidence =
+    topFactors.length >= 3 ? "medium" : topFactors.length >= 2 ? "low" : "low";
+
+  // Build specific tradeoffs based on what was found
+  let tradeoffs = "Balancing ";
+  const tradeoffParts = [];
+  if (sweetenerMatches.length > 0) tradeoffParts.push("taste appeal");
+  if (preservativeMatches.length > 0) tradeoffParts.push("shelf stability");
+  if (emulsifierMatches.length > 0) tradeoffParts.push("texture consistency");
+  if (naturalMatches.length > 0) tradeoffParts.push("natural positioning");
+  if (tradeoffParts.length === 0) tradeoffParts.push("cost and functionality");
+  tradeoffs +=
+    tradeoffParts.join(", ") + " against simplicity and minimal processing.";
 
   return {
-    judgment:
-      "This read is a fallback interpretation while the analysis service is offline.",
-    key_factors: factors,
-    tradeoffs:
-      "Balancing taste, shelf life, and texture while keeping ingredients manageable.",
+    judgment: `This appears to be a ${
+      ingredientCount > 10 ? "moderately complex" : "relatively simple"
+    } formulation. (Offline analysis — connect to get full AI interpretation.)`,
+    key_factors: topFactors,
+    tradeoffs,
     uncertainty:
-      "No model output available; interpretation inferred from simple label patterns only.",
+      "Full AI analysis unavailable; this is a pattern-based approximation only. Actual product intent may differ.",
     confidence,
   };
 }
