@@ -10,6 +10,7 @@ import {
   Activity,
   Clock3,
   Target,
+  ScanLine,
 } from "lucide-react";
 
 import * as authService from "./services/auth";
@@ -21,6 +22,7 @@ import IngredientInput from "./components/IngredientInput";
 import AnalysisResult from "./components/AnalysisResult";
 import LoadingState from "./components/LoadingState";
 import HistoryList from "./components/HistoryList";
+import BarcodeScanner from "./components/BarcodeScanner";
 import { ToastProvider, useToast } from "./components/Toast";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -37,6 +39,7 @@ function AppContent() {
   const [isSignUp, setIsSignUp] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [lastAnalysisAt, setLastAnalysisAt] = useState(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   const toast = useToast();
   const supabaseConfigured = isConfigured();
@@ -256,6 +259,12 @@ function AppContent() {
     };
     setAnalysisResult(result);
     setView("result");
+  };
+
+  // Handle barcode scan ingredients
+  const handleBarcodeIngredients = (ingredients) => {
+    setShowBarcodeScanner(false);
+    handleAnalyze(ingredients);
   };
 
   // Show loading screen during initialization
@@ -497,13 +506,19 @@ function AppContent() {
 
       <section className="hero-grid">
         <div className="hero-card">
-          <div className="eyebrow">Food label co-pilot</div>
+          <div
+            className="eyebrow"
+            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            <Leaf size={14} />
+            Food label co-pilot
+          </div>
           <h1 className="hero-title">
             Interpret ingredients with calm, human context.
           </h1>
           <p className="hero-body">
             EnCode spots structural patterns in ingredient lists and translates
-            what they suggest -- with measured, responsible commentary and zero
+            what they suggest — with measured, responsible commentary and zero
             scare tactics.
           </p>
           <div className="hero-actions">
@@ -513,19 +528,31 @@ function AppContent() {
                 setView("input");
                 setAnalysisResult(null);
               }}
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
             >
+              <Sparkles size={16} />
               Start a new analysis
             </button>
             <button
               className="btn-secondary"
-              onClick={() => setView("history")}
+              onClick={() => setShowBarcodeScanner(true)}
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
             >
+              <ScanLine size={16} />
+              Scan Barcode
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={() => setView("history")}
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <History size={16} />
               Browse history
             </button>
           </div>
         </div>
         <div className="status-panel">
-          <div className="status-chip success">
+          <div className={`status-chip ${isOnline ? "success" : "warn"}`}>
             <Activity size={16} />
             <span>{isOnline ? "Online" : "Offline"}</span>
           </div>
@@ -593,10 +620,18 @@ function AppContent() {
             <LoadingState />
           ) : (
             <>
-              {view === "input" && (
+              {showBarcodeScanner && (
+                <BarcodeScanner
+                  onIngredientsFound={handleBarcodeIngredients}
+                  onClose={() => setShowBarcodeScanner(false)}
+                  isLoading={isLoading}
+                />
+              )}
+              {view === "input" && !showBarcodeScanner && (
                 <IngredientInput
                   onAnalyze={handleAnalyze}
                   isLoading={isLoading}
+                  onOpenScanner={() => setShowBarcodeScanner(true)}
                 />
               )}
               {view === "result" && analysisResult && (
