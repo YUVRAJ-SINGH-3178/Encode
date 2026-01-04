@@ -4,7 +4,72 @@ import { supabase } from "../lib/supabase";
 const MAX_HISTORY_ITEMS = 50;
 
 // Local fallback storage key
-const LOCAL_HISTORY_KEY = "encode_local_history_v1";
+const LOCAL_HISTORY_KEY = "encode_local_history_v2";
+
+/**
+ * Normalize analysis data to use current field names
+ * Maps old field names (key_factors, tradeoffs, uncertainty) to new names (observations, tradeoff, limitations)
+ */
+function normalizeAnalysis(item) {
+  if (!item) return item;
+
+  const normalized = { ...item };
+
+  // Map key_factors -> observations (with structure change)
+  if (item.key_factors && !item.observations) {
+    normalized.observations = item.key_factors.map((kf) => ({
+      observation: kf.factor || kf.observation,
+      why: kf.explanation || kf.why,
+    }));
+    delete normalized.key_factors;
+  }
+
+  // Map tradeoffs -> tradeoff (singular)
+  if (item.tradeoffs && !item.tradeoff) {
+    normalized.tradeoff = item.tradeoffs;
+    delete normalized.tradeoffs;
+  }
+
+  // Map uncertainty -> limitations
+  if (item.uncertainty && !item.limitations) {
+    normalized.limitations = item.uncertainty;
+    delete normalized.uncertainty;
+  }
+
+  return normalized;
+}
+
+/**
+ * Convert new field names back to database column names for storage
+ */
+function toDbFormat(item) {
+  if (!item) return item;
+
+  const dbItem = { ...item };
+
+  // Map observations -> key_factors
+  if (item.observations && !item.key_factors) {
+    dbItem.key_factors = item.observations.map((obs) => ({
+      factor: obs.observation,
+      explanation: obs.why,
+    }));
+    delete dbItem.observations;
+  }
+
+  // Map tradeoff -> tradeoffs
+  if (item.tradeoff && !item.tradeoffs) {
+    dbItem.tradeoffs = item.tradeoff;
+    delete dbItem.tradeoff;
+  }
+
+  // Map limitations -> uncertainty
+  if (item.limitations && !item.uncertainty) {
+    dbItem.uncertainty = item.limitations;
+    delete dbItem.limitations;
+  }
+
+  return dbItem;
+}
 
 function readLocalHistory(userId) {
   if (typeof localStorage === "undefined") return [];
@@ -16,7 +81,7 @@ function readLocalHistory(userId) {
     const filtered = userId
       ? parsed.filter((item) => item?.user_id === userId)
       : parsed;
-    return filtered.slice(0, MAX_HISTORY_ITEMS);
+    return filtered.slice(0, MAX_HISTORY_ITEMS).map(normalizeAnalysis);
   } catch (err) {
     console.error("Local history read error:", err);
     return [];
@@ -38,10 +103,11 @@ function writeLocalHistory(items) {
 export function saveLocalAnalysis(entry) {
   if (!entry) return;
   const existing = readLocalHistory(entry.user_id);
+  const normalized = normalizeAnalysis(entry);
   const withId = {
-    id: entry.id || crypto.randomUUID?.() || `${Date.now()}`,
-    created_at: entry.created_at || new Date().toISOString(),
-    ...entry,
+    id: normalized.id || crypto.randomUUID?.() || `${Date.now()}`,
+    created_at: normalized.created_at || new Date().toISOString(),
+    ...normalized,
   };
   writeLocalHistory([withId, ...existing]);
 }
@@ -111,7 +177,9 @@ export async function getHistory(limit = MAX_HISTORY_ITEMS) {
       return { data: local, error: error.message };
     }
 
-    const merged = mergeHistory(data || [], local).slice(0, limit);
+    const merged = mergeHistory(data || [], local)
+      .slice(0, limit)
+      .map(normalizeAnalysis);
     writeLocalHistory(merged);
     return { data: merged, error: null };
   } catch (err) {
@@ -185,7 +253,7 @@ export async function getAnalysisById(id) {
       return null;
     }
 
-    return data;
+    return normalizeAnalysis(data);
   } catch (err) {
     console.error("Unexpected fetch error:", err);
     const local = readLocalHistory();

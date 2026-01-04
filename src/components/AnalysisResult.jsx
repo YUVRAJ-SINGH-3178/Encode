@@ -1,10 +1,10 @@
 import React from "react";
-import { Lightbulb, AlertCircle, Scale } from "lucide-react";
+import { Eye, Scale, HelpCircle } from "lucide-react";
 
 const AnalysisResult = ({ result, onReset }) => {
   if (!result) return null;
 
-  const { judgment, key_factors, tradeoffs, uncertainty, confidence } = result;
+  const { judgment, observations, tradeoff, limitations, confidence } = result;
 
   const getConfidenceClass = (level) => {
     return `confidence-badge ${level}`;
@@ -12,10 +12,12 @@ const AnalysisResult = ({ result, onReset }) => {
 
   return (
     <div className="fade-in">
-      {/* Main Judgment Card */}
+      {/* Main Judgment Card - The Mental Anchor */}
       <div className="paper-surface judgment-card delay-1">
-        <h2 style={{ marginBottom: "1rem", color: "var(--color-accent)" }}>
-          Co-pilot Judgment
+        <h2
+          style={{ marginBottom: "0.75rem", color: "var(--color-text-muted)" }}
+        >
+          What This Looks Like
         </h2>
         <h1 className="judgment-text">{judgment}</h1>
         <div className={getConfidenceClass(confidence)}>
@@ -23,16 +25,16 @@ const AnalysisResult = ({ result, onReset }) => {
         </div>
       </div>
 
-      {/* Patterns Section */}
-      <div className="patterns-section delay-2">
-        <div className="patterns-header">
-          <Lightbulb size={16} />
-          <h2>Patterns Identified</h2>
+      {/* Observations Section - Why the framing makes sense */}
+      <div className="observations-section delay-2">
+        <div className="observations-header">
+          <Eye size={16} />
+          <h2>Why This Framing</h2>
         </div>
         <div>
-          {key_factors.map((kf, index) => (
-            <div key={index} className="pattern-item">
-              <h3 style={{ marginBottom: "0.375rem" }}>{kf.factor}</h3>
+          {observations.map((obs, index) => (
+            <div key={index} className="observation-item">
+              <h3 style={{ marginBottom: "0.375rem" }}>{obs.observation}</h3>
               <p
                 style={{
                   margin: 0,
@@ -41,26 +43,26 @@ const AnalysisResult = ({ result, onReset }) => {
                   lineHeight: "1.6",
                 }}
               >
-                {kf.explanation}
+                {obs.why}
               </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Tradeoffs Section */}
-      <div className="tradeoffs-section delay-3">
+      {/* Tradeoff Section - What you gain vs give up */}
+      <div className="tradeoff-section delay-3">
         <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Scale size={14} />
-          Tradeoffs
+          The Tradeoff
         </h2>
-        <p className="subhead" style={{ margin: 0, fontSize: "1rem" }}>
-          {tradeoffs}
+        <p className="tradeoff-text" style={{ margin: 0 }}>
+          {tradeoff}
         </p>
       </div>
 
-      {/* Uncertainty Section */}
-      <div className="uncertainty-box delay-3">
+      {/* Limitations Section - What can't be known */}
+      <div className="limitations-box delay-3">
         <h2
           style={{
             display: "flex",
@@ -69,10 +71,10 @@ const AnalysisResult = ({ result, onReset }) => {
             marginBottom: "0.5rem",
           }}
         >
-          <AlertCircle size={14} />
-          Uncertainty & Limits
+          <HelpCircle size={14} />
+          What the Label Can't Tell You
         </h2>
-        <p>{uncertainty}</p>
+        <p>{limitations}</p>
       </div>
 
       {/* Action */}
@@ -81,7 +83,7 @@ const AnalysisResult = ({ result, onReset }) => {
         className="delay-4"
       >
         <button onClick={onReset} className="btn-secondary">
-          New Analysis
+          New Judgment
         </button>
       </div>
     </div>

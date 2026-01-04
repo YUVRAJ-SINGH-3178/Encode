@@ -752,11 +752,11 @@ textarea::placeholder {
    Sections
    ======================================== */
 
-.patterns-section {
+.observations-section {
   margin-top: 2.5rem;
 }
 
-.patterns-header {
+.observations-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -765,33 +765,40 @@ textarea::placeholder {
   margin-bottom: 1rem;
 }
 
-.patterns-header h2 {
+.observations-header h2 {
   margin: 0;
   color: var(--color-accent);
 }
 
-.pattern-item {
+.observation-item {
   padding: 1rem 0;
   border-bottom: 1px solid var(--color-divider);
 }
 
-.pattern-item:last-child {
+.observation-item:last-child {
   border-bottom: none;
 }
 
-.tradeoffs-section {
+.tradeoff-section {
   background: var(--color-accent-light);
   padding: 1.25rem 1.5rem;
   border-radius: 10px;
   margin-top: 2rem;
 }
 
-.tradeoffs-section h2 {
+.tradeoff-section h2 {
   color: var(--color-accent);
   margin-bottom: 0.5rem;
 }
 
-.uncertainty-box {
+.tradeoff-text {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.limitations-box {
   background: var(--color-bg-warm);
   padding: 1.25rem 1.5rem;
   border-radius: 10px;
@@ -799,11 +806,11 @@ textarea::placeholder {
   margin-top: 1.5rem;
 }
 
-.uncertainty-box h2 {
+.limitations-box h2 {
   margin-bottom: 0.5rem;
 }
 
-.uncertainty-box p {
+.limitations-box p {
   margin: 0;
   font-size: 0.9375rem;
   color: var(--color-text-secondary);

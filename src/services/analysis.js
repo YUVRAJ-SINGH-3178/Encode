@@ -119,9 +119,9 @@ export async function analyzeIngredients(ingredients) {
     // Ensure required fields exist
     const requiredFields = [
       "judgment",
-      "key_factors",
-      "tradeoffs",
-      "uncertainty",
+      "observations",
+      "tradeoff",
+      "limitations",
       "confidence",
     ];
     for (const field of requiredFields) {
@@ -225,16 +225,17 @@ function buildFallbackAnalysis(text) {
   if (!looksLikeIngredients(text)) {
     return {
       judgment:
-        "This does not appear to be a food ingredient list. Please paste ingredients from actual product packaging.",
-      key_factors: [
+        "This doesn't look like an ingredient list. Paste what you see on the package.",
+      observations: [
         {
-          factor: "invalid input",
-          explanation:
-            "The provided text does not match the expected format of a food ingredient list.",
+          observation: "Nothing to go on",
+          why: "Without actual ingredients, there's no way to frame what kind of product this is.",
         },
       ],
-      tradeoffs: "Unable to analyze non-ingredient text.",
-      uncertainty: "Cannot determine if this relates to any food product.",
+      tradeoff:
+        "Pasting real ingredients gives you clarity; skipping that step leaves you guessing.",
+      limitations:
+        "Can't determine product type, purpose, or what kind of decision this represents.",
       confidence: "low",
     };
   }
@@ -300,109 +301,110 @@ function buildFallbackAnalysis(text) {
   const colorMatches = colors.filter((s) => lower.includes(s));
   const naturalMatches = naturalIndicators.filter((s) => lower.includes(s));
 
-  const factors = [];
+  const observations = [];
 
-  // Ingredient count analysis
+  // Ingredient count observation
   if (ingredientCount > 15) {
-    factors.push({
-      factor: "complex formulation",
-      explanation: `With approximately ${ingredientCount} ingredients, this suggests a highly processed product with multiple functional additives.`,
+    observations.push({
+      observation: "Long ingredient list",
+      why: `Around ${ingredientCount} ingredients suggests this is built for convenience and shelf life rather than simplicity.`,
     });
   } else if (ingredientCount <= 5) {
-    factors.push({
-      factor: "simple formulation",
-      explanation: `Only about ${ingredientCount} ingredients indicates a relatively straightforward, less processed product.`,
+    observations.push({
+      observation: "Short, simple list",
+      why: `Only about ${ingredientCount} ingredients — this looks like a relatively basic product.`,
     });
   }
 
   if (sweetenerMatches.length > 1) {
-    factors.push({
-      factor: "multiple sweeteners",
-      explanation: `Contains ${
-        sweetenerMatches.length
-      } sweetening agents (${sweetenerMatches
-        .slice(0, 3)
-        .join(
-          ", "
-        )}), suggesting taste optimization and possibly cost balancing.`,
+    observations.push({
+      observation: "Multiple sweetening agents",
+      why: "Using more than one sweetener often points to a product designed around taste and cost balance.",
     });
   } else if (sweetenerMatches.length === 1) {
-    factors.push({
-      factor: "sweetener presence",
-      explanation: `Contains ${sweetenerMatches[0]}, indicating sweetness is a key product attribute.`,
+    observations.push({
+      observation: "Sweetness is central",
+      why: "A sweetener listed suggests taste is a primary feature of this product.",
     });
   }
 
   if (preservativeMatches.length > 0) {
-    factors.push({
-      factor: "shelf-life focus",
-      explanation: `Preservatives present (${preservativeMatches.join(
-        ", "
-      )}) point to extended shelf-life as a priority.`,
+    observations.push({
+      observation: "Built to last on a shelf",
+      why: "Preservatives indicate this is designed for a longer shelf life.",
     });
   }
 
   if (emulsifierMatches.length > 0) {
-    factors.push({
-      factor: "texture engineering",
-      explanation: `Emulsifiers/stabilizers (${emulsifierMatches
-        .slice(0, 2)
-        .join(
-          ", "
-        )}) suggest texture consistency and separation prevention goals.`,
+    observations.push({
+      observation: "Texture is engineered",
+      why: "Stabilizers and emulsifiers suggest consistency and texture are priorities.",
     });
   }
 
   if (colorMatches.length > 0) {
-    factors.push({
-      factor: "visual appeal",
-      explanation: `Color additives indicate visual appearance is prioritized for consumer appeal.`,
+    observations.push({
+      observation: "Color is added for appeal",
+      why: "Added colors point to visual presentation being part of the product's design.",
     });
   }
 
   if (naturalMatches.length >= 2) {
-    factors.push({
-      factor: "natural positioning",
-      explanation: `Terms like ${naturalMatches
-        .slice(0, 2)
-        .join(", ")} suggest marketing toward natural/clean-label preferences.`,
+    observations.push({
+      observation: "Positioned as natural",
+      why: "Terms like 'organic' or 'natural' suggest the product is marketed toward simpler preferences.",
     });
   }
 
-  // Ensure at least one factor
-  if (factors.length === 0) {
-    factors.push({
-      factor: "standard formulation",
-      explanation:
-        "No strong distinguishing patterns detected; appears to be a conventional product formulation.",
+  // Ensure at least one observation
+  if (observations.length === 0) {
+    observations.push({
+      observation: "Standard product",
+      why: "Nothing stands out — this looks like a conventional product.",
     });
   }
 
-  // Limit to 4 factors
-  const topFactors = factors.slice(0, 4);
+  // Limit to 3 observations
+  const topObservations = observations.slice(0, 3);
 
   const confidence =
-    topFactors.length >= 3 ? "medium" : topFactors.length >= 2 ? "low" : "low";
+    topObservations.length >= 3
+      ? "medium"
+      : topObservations.length >= 2
+      ? "low"
+      : "low";
 
-  // Build specific tradeoffs based on what was found
-  let tradeoffs = "Balancing ";
-  const tradeoffParts = [];
-  if (sweetenerMatches.length > 0) tradeoffParts.push("taste appeal");
-  if (preservativeMatches.length > 0) tradeoffParts.push("shelf stability");
-  if (emulsifierMatches.length > 0) tradeoffParts.push("texture consistency");
-  if (naturalMatches.length > 0) tradeoffParts.push("natural positioning");
-  if (tradeoffParts.length === 0) tradeoffParts.push("cost and functionality");
-  tradeoffs +=
-    tradeoffParts.join(", ") + " against simplicity and minimal processing.";
+  // Build tradeoff sentence based on what was found
+  const gains = [];
+  const costs = [];
+
+  if (sweetenerMatches.length > 0) gains.push("taste");
+  if (preservativeMatches.length > 0) gains.push("shelf life");
+  if (emulsifierMatches.length > 0) gains.push("consistent texture");
+  if (ingredientCount <= 5) gains.push("simplicity");
+  if (ingredientCount > 10) costs.push("simplicity");
+  if (preservativeMatches.length > 0 || emulsifierMatches.length > 0)
+    costs.push("minimal ingredients");
+
+  const gainText =
+    gains.length > 0 ? gains.slice(0, 2).join(" and ") : "convenience";
+  const costText =
+    costs.length > 0
+      ? costs.slice(0, 2).join(" and ")
+      : "a shorter ingredient list";
+  const tradeoff = `You get ${gainText}; you give up ${costText}.`;
+
+  const productType =
+    ingredientCount > 10
+      ? "convenience-oriented product"
+      : "relatively straightforward product";
 
   return {
-    judgment: `This appears to be a ${
-      ingredientCount > 10 ? "moderately complex" : "relatively simple"
-    } formulation. (Offline analysis — connect to get full AI interpretation.)`,
-    key_factors: topFactors,
-    tradeoffs,
-    uncertainty:
-      "Full AI analysis unavailable; this is a pattern-based approximation only. Actual product intent may differ.",
+    judgment: `This looks like a ${productType}. (Offline — limited detail available.)`,
+    observations: topObservations,
+    tradeoff,
+    limitations:
+      "Can't determine exact quantities, how often you eat this, or how it fits into your day. This is a rough read based on the ingredient list alone.",
     confidence,
   };
 }
