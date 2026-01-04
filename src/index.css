@@ -5,8 +5,8 @@
 
 :root {
   /* Bold Palette */
-  --color-bg: #f7f2ea;
-  --color-bg-warm: #f1e5d6;
+  --color-bg: #e8e8e8;
+  --color-bg-warm: #dcdcdc;
   --color-paper: #ffffff;
 
   /* Text */
@@ -14,27 +14,27 @@
   --color-text-secondary: #343d4a;
   --color-text-muted: #616a78;
 
-  /* Brand Accent - Deep Teal */
-  --color-accent: #0f766e;
-  --color-accent-hover: #0b5b55;
-  --color-accent-light: #d7f2ee;
-  --color-accent-soft: #ecf8f5;
+  /* Brand Accent - Olive */
+  --color-accent: #6b7b3a;
+  --color-accent-hover: #525f2d;
+  --color-accent-light: #e5ebd4;
+  --color-accent-soft: #f0f4e6;
 
-  /* Secondary Ember Accent */
-  --color-ember: #e4572e;
-  --color-ember-light: #fde6dd;
+  /* Secondary Accent - Purple/Yellow Mix (Muted Gold) */
+  --color-ember: #8b7355;
+  --color-ember-light: #f5f0e8;
 
   /* Confidence Colors */
-  --color-high: #1c9f6e;
-  --color-high-bg: #e1f6ed;
-  --color-medium: #c17400;
-  --color-medium-bg: #fff3da;
-  --color-low: #b2573d;
-  --color-low-bg: #fbeee7;
+  --color-high: #6b7b3a;
+  --color-high-bg: #e5ebd4;
+  --color-medium: #9a8b4f;
+  --color-medium-bg: #f5f2e0;
+  --color-low: #7a6b8a;
+  --color-low-bg: #f0edf4;
 
   /* Borders */
-  --color-divider: #e0d7cb;
-  --color-border: #cdbfab;
+  --color-divider: #d0d0d0;
+  --color-border: #b8b8b8;
 
   /* Typography */
   --font-serif: "Fraunces", "Iowan Old Style", Georgia, serif;
@@ -65,12 +65,12 @@ body {
   min-height: 100vh;
   background: radial-gradient(
       circle at 16% 18%,
-      rgba(13, 118, 110, 0.16) 0%,
+      rgba(107, 123, 58, 0.14) 0%,
       transparent 32%
     ),
     radial-gradient(
       circle at 82% 6%,
-      rgba(228, 87, 46, 0.18) 0%,
+      rgba(200, 190, 120, 0.16) 0%,
       transparent 34%
     ),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-warm) 100%);
@@ -169,7 +169,7 @@ h3 {
   background: radial-gradient(
     circle at 18% 18%,
     var(--color-accent-soft) 0%,
-    #e9f4f1 45%,
+    #eef2e6 45%,
     var(--color-paper) 100%
   );
   border: 1px solid var(--color-divider);
@@ -185,7 +185,7 @@ h3 {
   height: 220px;
   background: radial-gradient(
     circle,
-    rgba(15, 118, 110, 0.22),
+    rgba(107, 123, 58, 0.22),
     transparent 60%
   );
   top: -70px;
@@ -229,11 +229,11 @@ h3 {
 }
 
 .btn-primary {
-  box-shadow: 0 12px 30px rgba(47, 124, 124, 0.25);
+  box-shadow: 0 12px 30px rgba(107, 123, 58, 0.25);
 }
 
 .btn-secondary {
-  border-color: rgba(47, 124, 124, 0.25);
+  border-color: rgba(107, 123, 58, 0.25);
 }
 
 .main-grid {
@@ -281,7 +281,7 @@ h3 {
   inset: 0;
   background: radial-gradient(
     circle at 80% 0%,
-    rgba(15, 118, 110, 0.12),
+    rgba(107, 123, 58, 0.12),
     transparent 54%
   );
   pointer-events: none;
@@ -353,13 +353,13 @@ h3 {
 }
 
 .pill-primary {
-  border-color: rgba(47, 124, 124, 0.3);
+  border-color: rgba(107, 123, 58, 0.3);
   color: var(--color-accent);
   background: var(--color-accent-light);
 }
 
 .pill-secondary {
-  border-color: rgba(217, 119, 87, 0.35);
+  border-color: rgba(139, 115, 85, 0.35);
   color: var(--color-ember);
   background: var(--color-ember-light);
 }
@@ -397,7 +397,7 @@ h3 {
     var(--color-paper) 0%,
     var(--color-accent-light) 90%
   );
-  border: 1px solid rgba(15, 118, 110, 0.18);
+  border: 1px solid rgba(107, 123, 58, 0.18);
   border-radius: 12px;
   padding: 0.8rem 0.95rem;
   box-shadow: var(--shadow-sm);
@@ -451,7 +451,7 @@ h3 {
 .status-chip.success {
   background: var(--color-accent-light);
   color: var(--color-accent);
-  border-color: rgba(61, 139, 139, 0.3);
+  border-color: rgba(107, 123, 58, 0.3);
 }
 
 .status-chip.warn {
@@ -501,7 +501,7 @@ h3 {
     var(--color-bg-warm),
     var(--color-accent-light)
   );
-  border: 1px solid rgba(15, 118, 110, 0.25);
+  border: 1px solid rgba(107, 123, 58, 0.25);
   border-radius: 999px;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
@@ -560,16 +560,16 @@ button {
 }
 
 button.btn-primary {
-  background: linear-gradient(135deg, var(--color-accent) 0%, #119c91 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, #7d8f45 100%);
   color: white;
   padding: 0.85rem 1.65rem;
-  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.28);
+  box-shadow: 0 14px 30px rgba(107, 123, 58, 0.28);
 }
 
 button.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0c6760 0%, #118378 100%);
+  background: linear-gradient(135deg, #525f2d 0%, #6b7b3a 100%);
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 16px 36px rgba(15, 118, 110, 0.32);
+  box-shadow: 0 16px 36px rgba(107, 123, 58, 0.32);
 }
 
 button:disabled {
@@ -580,14 +580,14 @@ button:disabled {
 }
 
 button.btn-secondary {
-  background: rgba(15, 118, 110, 0.05);
+  background: rgba(107, 123, 58, 0.05);
   color: var(--color-text-secondary);
-  border: 1px solid rgba(15, 118, 110, 0.2);
+  border: 1px solid rgba(107, 123, 58, 0.2);
   padding: 0.72rem 1.45rem;
 }
 
 button.btn-secondary:hover {
-  background: rgba(15, 118, 110, 0.1);
+  background: rgba(107, 123, 58, 0.1);
   border-color: var(--color-accent);
   color: var(--color-accent);
   transform: translateY(-2px);
