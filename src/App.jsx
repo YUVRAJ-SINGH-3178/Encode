@@ -252,9 +252,14 @@ function AppContent() {
   const handleSelectHistory = (entry) => {
     const result = {
       judgment: entry.judgment,
-      key_factors: entry.key_factors,
-      tradeoffs: entry.tradeoffs,
-      uncertainty: entry.uncertainty,
+      observations:
+        entry.observations ||
+        entry.key_factors?.map((kf) => ({
+          observation: kf.factor || kf.observation,
+          why: kf.explanation || kf.why,
+        })),
+      tradeoff: entry.tradeoff || entry.tradeoffs,
+      limitations: entry.limitations || entry.uncertainty,
       confidence: entry.confidence,
     };
     setAnalysisResult(result);
