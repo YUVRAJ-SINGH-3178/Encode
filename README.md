@@ -10,13 +10,16 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#demo">Demo</a> •
+  <a href="https://encode-iota.vercel.app/">Live Demo</a> •
   <a href="#tech-stack">Tech Stack</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#deployment">Deployment</a>
 </p>
 
 <p align="center">
+  <a href="https://encode-iota.vercel.app/">
+    <img src="https://img.shields.io/badge/Demo-Live-brightgreen?style=flat-square&logo=vercel" alt="Live Demo"/>
+  </a>
   <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?style=flat-square&logo=react" alt="React"/>
   <img src="https://img.shields.io/badge/Vite-5.0.0-646CFF?style=flat-square&logo=vite" alt="Vite"/>
   <img src="https://img.shields.io/badge/Supabase-Powered-3ECF8E?style=flat-square&logo=supabase" alt="Supabase"/>
@@ -79,6 +82,8 @@ EnCode is a modern web application that helps you **understand food ingredient l
 ---
 
 ## 🖼️ Demo
+
+**🔗 [Try EnCode Live →](https://encode-iota.vercel.app/)**
 
 ### Home Dashboard
 
