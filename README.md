@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#demo">[Demo](https://encode-iota.vercel.app/)</a> •
+  <a href="#demo">(https://encode-iota.vercel.app</a> •
   <a href="#tech-stack">Tech Stack</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#deployment">Deployment</a>
